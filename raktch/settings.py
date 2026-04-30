@@ -35,10 +35,10 @@ ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='localhost,127.0.0.1', ca
 # Application definition
 # ---------------------------------------------------------------------------
 INSTALLED_APPS = [
-    # Django built-ins
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
+    # Django built-ins — use custom configs to override AutoField for MongoDB
+    'raktch.mongocompat.MongoAdminConfig',
+    'raktch.mongocompat.MongoAuthConfig',
+    'raktch.mongocompat.MongoContentTypesConfig',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
@@ -98,12 +98,13 @@ TEMPLATES = [
 WSGI_APPLICATION = 'raktch.wsgi.application'
 
 # ---------------------------------------------------------------------------
-# Database — SQLite3 only
+# Database — MongoDB Atlas via django-mongodb-backend
 # ---------------------------------------------------------------------------
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django_mongodb_backend',
+        'HOST': config('MONGODB_URI'),
+        'NAME': config('MONGODB_NAME', default='raktchops'),
     }
 }
 
@@ -139,7 +140,16 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = config('MEDIA_URL', default='/media/')
 MEDIA_ROOT = ROOT_DIR / config('MEDIA_ROOT', default='backend/media')
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = 'django_mongodb_backend.fields.ObjectIdAutoField'
+
+# ---------------------------------------------------------------------------
+# MongoDB-compatible migrations for Django built-in apps
+# ---------------------------------------------------------------------------
+MIGRATION_MODULES = {
+    'admin': 'mongo_migrations.admin',
+    'auth': 'mongo_migrations.auth',
+    'contenttypes': 'mongo_migrations.contenttypes',
+}
 
 # ---------------------------------------------------------------------------
 # CORS
