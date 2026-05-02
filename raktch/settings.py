@@ -29,7 +29,11 @@ ROOT_DIR = BASE_DIR.parent
 # ---------------------------------------------------------------------------
 SECRET_KEY = config('DJANGO_SECRET_KEY', default='insecure-default-change-me')
 DEBUG = config('DJANGO_DEBUG', default=False, cast=bool)
-ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
+ALLOWED_HOSTS = config(
+    'DJANGO_ALLOWED_HOSTS',
+    default='localhost,127.0.0.1,.vercel.app',
+    cast=Csv(),
+)
 
 # ---------------------------------------------------------------------------
 # Application definition
@@ -68,6 +72,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -134,8 +139,16 @@ USE_TZ = True
 # ---------------------------------------------------------------------------
 # Static and media
 # ---------------------------------------------------------------------------
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    },
+}
 
 MEDIA_URL = config('MEDIA_URL', default='/media/')
 MEDIA_ROOT = ROOT_DIR / config('MEDIA_ROOT', default='backend/media')
