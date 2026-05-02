@@ -52,7 +52,7 @@ urlpatterns = [
 
     # Allowed domains CRUD (super admin)
     path('allowed-domains/', AllowedDomainListCreateView.as_view(), name='auth-allowed-domains'),
-    path('allowed-domains/<int:pk>/', AllowedDomainDetailView.as_view(), name='auth-allowed-domain-detail'),
+    path('allowed-domains/<str:pk>/', AllowedDomainDetailView.as_view(), name='auth-allowed-domain-detail'),
 
     # User management (super admin)
     path('users/', UserListCreateView.as_view(), name='auth-user-list'),

@@ -421,12 +421,16 @@ class SignupSerializer(serializers.Serializer):
 # ---------------------------------------------------------------------------
 
 class AllowedDomainSerializer(serializers.ModelSerializer):
+    id = serializers.SerializerMethodField()
     created_by_email = serializers.SerializerMethodField()
 
     class Meta:
         model = AllowedDomain
         fields = ['id', 'domain', 'is_active', 'notes', 'created_by', 'created_by_email', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_by', 'created_by_email', 'created_at', 'updated_at']
+
+    def get_id(self, obj):
+        return str(obj.pk)
 
     def get_created_by_email(self, obj):
         if obj.created_by:
