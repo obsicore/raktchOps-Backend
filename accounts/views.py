@@ -19,7 +19,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 
-from rbac.permissions import IsAdmin, IsActiveUser, IsSuperAdmin
+from rbac.permissions import IsAdmin, IsActiveUser
 from rbac.models import UserRole, Role
 
 from .models import (
@@ -510,7 +510,7 @@ class SignupView(APIView):
 
 
 # ---------------------------------------------------------------------------
-# AllowedDomain CRUD (super admin only)
+# AllowedDomain CRUD (admin or super admin)
 # ---------------------------------------------------------------------------
 
 from rest_framework.pagination import PageNumberPagination
@@ -521,7 +521,7 @@ class AllowedDomainListCreateView(APIView):
     GET  /api/v1/auth/allowed-domains/
     POST /api/v1/auth/allowed-domains/
     """
-    permission_classes = [IsAuthenticated, IsActiveUser, IsSuperAdmin]
+    permission_classes = [IsAuthenticated, IsActiveUser, IsAdmin]
 
     def get(self, request):
         qs = AllowedDomain.objects.all().order_by('domain')
@@ -531,8 +531,9 @@ class AllowedDomainListCreateView(APIView):
     def post(self, request):
         serializer = AllowedDomainSerializer(data=request.data)
         if not serializer.is_valid():
+            errors = serializer.errors
             return Response(
-                {'detail': 'Validation failed.', 'errors': serializer.errors},
+                {'detail': 'Validation failed.', 'errors': errors, **errors},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         domain = serializer.save(created_by=request.user)
@@ -546,7 +547,7 @@ class AllowedDomainDetailView(APIView):
     PATCH  /api/v1/auth/allowed-domains/<id>/
     DELETE /api/v1/auth/allowed-domains/<id>/
     """
-    permission_classes = [IsAuthenticated, IsActiveUser, IsSuperAdmin]
+    permission_classes = [IsAuthenticated, IsActiveUser, IsAdmin]
 
     def _get_domain(self, pk):
         try:
@@ -562,8 +563,9 @@ class AllowedDomainDetailView(APIView):
         domain_obj = self._get_domain(pk)
         serializer = AllowedDomainSerializer(domain_obj, data=request.data, partial=True)
         if not serializer.is_valid():
+            errors = serializer.errors
             return Response(
-                {'detail': 'Validation failed.', 'errors': serializer.errors},
+                {'detail': 'Validation failed.', 'errors': errors, **errors},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         domain_obj = serializer.save()
