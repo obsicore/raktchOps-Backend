@@ -23,6 +23,9 @@ class UserRoleView(APIView):
     """
     permission_classes = [IsAuthenticated, IsActiveUser, IsAdmin]
 
+    def _is_super_admin(self, user) -> bool:
+        return get_user_role(user) == Role.SUPER_ADMIN
+
     def _get_user(self, user_id):
         try:
             return User.objects.get(id=user_id)
@@ -55,6 +58,16 @@ class UserRoleView(APIView):
                     'errors': {'role': [f'Invalid role. Choose one of: {", ".join(valid_roles)}']},
                 },
                 status=status.HTTP_400_BAD_REQUEST,
+            )
+        if role_value == Role.SUPER_ADMIN and not self._is_super_admin(request.user):
+            return Response(
+                {
+                    'detail': 'Permission denied.',
+                    'errors': {
+                        'role': ['Only super admins can assign the super_admin role.'],
+                    },
+                },
+                status=status.HTTP_403_FORBIDDEN,
             )
 
         # Remove any existing primary role and set the new one

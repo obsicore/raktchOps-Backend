@@ -31,6 +31,16 @@ def _make_staff(email='staff@raktch.com', password='StaffPass1!'):
     return user
 
 
+def _make_super_admin(email='superadmin@raktch.com', password='SuperPass1!'):
+    user = User.objects.create_user(
+        email=email,
+        password=password,
+        account_status=AccountStatus.ACTIVE,
+    )
+    UserRole.objects.create(user=user, role=Role.SUPER_ADMIN, is_primary=True)
+    return user
+
+
 def _auth(client, user, password=None):
     if password is None:
         password = 'AdminPass1!' if 'admin' in user.email else 'StaffPass1!'
@@ -107,6 +117,8 @@ class SignupTests(TestCase):
         self.assertEqual(resp.status_code, 201)
         user = User.objects.get(email='newuser@raktch.com')
         self.assertEqual(user.account_status, AccountStatus.PENDING_APPROVAL)
+        from rbac.models import get_user_role
+        self.assertEqual(get_user_role(user), 'staff')
 
     def test_signup_disallowed_domain(self):
         resp = self.client.post('/api/v1/auth/signup/', {
@@ -180,6 +192,7 @@ class UserManagementTests(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.admin = _make_admin()
+        self.super_admin = _make_super_admin()
         _auth(self.client, self.admin)
 
     def test_list_users(self):
@@ -227,6 +240,61 @@ class UserManagementTests(TestCase):
         _auth(staff_client, staff)
         resp = staff_client.get('/api/v1/auth/users/')
         self.assertEqual(resp.status_code, 403)
+
+    def test_admin_cannot_create_super_admin_user(self):
+        resp = self.client.post('/api/v1/auth/users/', {
+            'email': 'new-super@raktch.com',
+            'password': 'StrongPass1!',
+            'first_name': 'New',
+            'last_name': 'Super',
+            'role': 'super_admin',
+        }, format='json')
+        self.assertEqual(resp.status_code, 403)
+
+    def test_admin_cannot_promote_user_to_super_admin(self):
+        user = _make_staff('promote@raktch.com')
+        resp = self.client.post(f'/api/v1/auth/users/{user.pk}/change-role/', {'role': 'super_admin'}, format='json')
+        self.assertEqual(resp.status_code, 403)
+
+    def test_super_admin_can_create_super_admin_user(self):
+        sa_client = APIClient()
+        _auth(sa_client, self.super_admin, 'SuperPass1!')
+        resp = sa_client.post('/api/v1/auth/users/', {
+            'email': 'createdbysa@raktch.com',
+            'password': 'StrongPass1!',
+            'first_name': 'Created',
+            'last_name': 'BySa',
+            'role': 'super_admin',
+        }, format='json')
+        self.assertEqual(resp.status_code, 201)
+        created = User.objects.get(email='createdbysa@raktch.com')
+        from rbac.models import get_user_role
+        self.assertEqual(get_user_role(created), 'super_admin')
+
+    def test_super_admin_can_promote_user_to_super_admin(self):
+        user = _make_staff('promotebysa@raktch.com')
+        sa_client = APIClient()
+        _auth(sa_client, self.super_admin, 'SuperPass1!')
+        resp = sa_client.post(f'/api/v1/auth/users/{user.pk}/change-role/', {'role': 'super_admin'}, format='json')
+        self.assertEqual(resp.status_code, 200)
+        from rbac.models import get_user_role
+        self.assertEqual(get_user_role(user), 'super_admin')
+
+    def test_admin_cannot_invite_super_admin(self):
+        resp = self.client.post('/api/v1/auth/admin/invite/', {
+            'email': 'invite-super@raktch.com',
+            'role': 'super_admin',
+        }, format='json')
+        self.assertEqual(resp.status_code, 403)
+
+    def test_super_admin_can_invite_super_admin(self):
+        sa_client = APIClient()
+        _auth(sa_client, self.super_admin, 'SuperPass1!')
+        resp = sa_client.post('/api/v1/auth/admin/invite/', {
+            'email': 'invite-super2@raktch.com',
+            'role': 'super_admin',
+        }, format='json')
+        self.assertEqual(resp.status_code, 201)
 
 
 class ChangePasswordTests(TestCase):

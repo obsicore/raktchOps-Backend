@@ -20,13 +20,14 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 
 from rbac.permissions import IsAdmin, IsActiveUser
-from rbac.models import UserRole, Role
+from rbac.models import UserRole, Role, get_user_role
 
 from .models import (
     User,
     AccountStatus,
     InviteToken,
     InviteStatus,
+    InviteRoleChoices,
     EmailVerificationToken,
     PasswordResetToken,
     AllowedDomain,
@@ -56,6 +57,10 @@ from .emails import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _is_super_admin(user) -> bool:
+    return get_user_role(user) == Role.SUPER_ADMIN
 
 
 # ---------------------------------------------------------------------------
@@ -390,6 +395,16 @@ class AdminInviteView(APIView):
 
         email = serializer.validated_data['email']
         role = serializer.validated_data['role']
+        if role == InviteRoleChoices.SUPER_ADMIN and not _is_super_admin(request.user):
+            return Response(
+                {
+                    'detail': 'Permission denied.',
+                    'errors': {
+                        'role': ['Only super admins can assign the super_admin role.'],
+                    },
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         # Check for an already active user
         if User.objects.filter(email=email).exists():
@@ -584,7 +599,7 @@ class AllowedDomainDetailView(APIView):
 
 
 # ---------------------------------------------------------------------------
-# User management (super admin)
+# User management (admin; super_admin assignment restricted)
 # ---------------------------------------------------------------------------
 
 class UserListCreateView(APIView):
@@ -620,6 +635,17 @@ class UserListCreateView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         data = serializer.validated_data
+        requested_role = data.get('role', Role.STAFF)
+        if requested_role == Role.SUPER_ADMIN and not _is_super_admin(request.user):
+            return Response(
+                {
+                    'detail': 'Permission denied.',
+                    'errors': {
+                        'role': ['Only super admins can create users with the super_admin role.'],
+                    },
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
         user = User.objects.create_user(
             email=data['email'],
             password=data['password'],
@@ -627,7 +653,7 @@ class UserListCreateView(APIView):
         )
 
         from rbac.models import UserRole
-        role = data.get('role', 'staff')
+        role = requested_role
         UserRole.objects.create(user=user, role=role, is_primary=True)
 
         from people.models import EmployeeProfile
@@ -747,6 +773,16 @@ class UserChangeRoleView(APIView):
         role = request.data.get('role')
         if role not in [r[0] for r in Role.choices]:
             return Response({'detail': 'Invalid role.', 'errors': {'role': [f'Must be one of: {", ".join([r[0] for r in Role.choices])}']}}, status=status.HTTP_400_BAD_REQUEST)
+        if role == Role.SUPER_ADMIN and not _is_super_admin(request.user):
+            return Response(
+                {
+                    'detail': 'Permission denied.',
+                    'errors': {
+                        'role': ['Only super admins can assign the super_admin role.'],
+                    },
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         UserRole.objects.filter(user=user).update(is_primary=False)
         UserRole.objects.update_or_create(
