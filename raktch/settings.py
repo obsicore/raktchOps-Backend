@@ -146,9 +146,10 @@ STORAGES = {
         'BACKEND': 'django.core.files.storage.FileSystemStorage',
     },
     'staticfiles': {
-        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+        'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
     },
 }
+WHITENOISE_USE_FINDERS = True
 
 MEDIA_URL = config('MEDIA_URL', default='/media/')
 MEDIA_ROOT = ROOT_DIR / config('MEDIA_ROOT', default='backend/media')
