@@ -1,10 +1,16 @@
 """Serializers for the tasks app."""
 
 from rest_framework import serializers
+from modules.models import Module
 from .models import Task
 
 
 class TaskSerializer(serializers.ModelSerializer):
+    id = serializers.CharField(read_only=True)
+    module = serializers.PrimaryKeyRelatedField(
+        queryset=Module.objects.all(),
+        pk_field=serializers.CharField(),
+    )
     is_overdue = serializers.SerializerMethodField()
     assignee_email = serializers.SerializerMethodField()
     assignee_name = serializers.SerializerMethodField()

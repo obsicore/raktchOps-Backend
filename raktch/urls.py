@@ -29,11 +29,11 @@ api_v1_patterns = [
     path('projects/<uuid:project_id>/modules/', include('modules.urls')),
 
     # Tasks nested under modules
-    path('modules/<int:module_id>/tasks/', TaskListCreateView.as_view(), name='task-list-create'),
-    path('modules/<int:module_id>/tasks/<int:pk>/', TaskDetailView.as_view(), name='task-detail'),
+    path('modules/<str:module_id>/tasks/', TaskListCreateView.as_view(), name='task-list-create'),
+    path('modules/<str:module_id>/tasks/<str:pk>/', TaskDetailView.as_view(), name='task-detail'),
 
     # Top-level task actions (kanban move)
-    path('tasks/<int:pk>/move/', TaskMoveView.as_view(), name='task-move'),
+    path('tasks/<str:pk>/move/', TaskMoveView.as_view(), name='task-move'),
 
     # Project kanban board
     path('projects/<uuid:project_id>/board/', ProjectBoardView.as_view(), name='project-board'),

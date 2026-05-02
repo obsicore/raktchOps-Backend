@@ -6,6 +6,7 @@ from .models import Module
 
 
 class ModuleSerializer(serializers.ModelSerializer):
+    id = serializers.CharField(read_only=True)
     progress = serializers.SerializerMethodField()
     is_overdue = serializers.SerializerMethodField()
     task_count = serializers.SerializerMethodField()

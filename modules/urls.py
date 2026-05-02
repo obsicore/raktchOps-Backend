@@ -7,5 +7,5 @@ urlpatterns = [
     path('', ModuleListCreateView.as_view(), name='module-list-create'),
     path('bulk-import/', ModuleBulkImportView.as_view(), name='module-bulk-import'),
     path('bulk-import/template/', ModuleBulkImportView.as_view(), name='module-bulk-import-template'),
-    path('<int:pk>/', ModuleDetailView.as_view(), name='module-detail'),
+    path('<str:pk>/', ModuleDetailView.as_view(), name='module-detail'),
 ]
