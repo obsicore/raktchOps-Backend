@@ -65,7 +65,7 @@ class ModuleListCreateView(APIView):
     def post(self, request, project_id):
         project = _get_project(project_id)
         if not can_manage_module(request.user, project):
-            raise PermissionDenied('Only the project owner or admin can create modules.')
+            raise PermissionDenied('Only super admin, admin, project manager, team lead, or project owner can create modules.')
 
         data = dict(request.data)
         data['project'] = str(project.pk)
@@ -117,7 +117,7 @@ class ModuleDetailView(APIView):
     def _update(self, request, project_id, pk, partial):
         project, module = self._get_module(project_id, pk)
         if not can_manage_module(request.user, project):
-            raise PermissionDenied('Only the project owner or admin can edit modules.')
+            raise PermissionDenied('Only super admin, admin, project manager, team lead, or project owner can edit modules.')
         previous_status = module.status
 
         data = dict(request.data)
@@ -166,7 +166,7 @@ class ModuleDetailView(APIView):
     def delete(self, request, project_id, pk):
         project, module = self._get_module(project_id, pk)
         if not can_manage_module(request.user, project):
-            raise PermissionDenied('Only the project owner or admin can delete modules.')
+            raise PermissionDenied('Only super admin, admin, project manager, team lead, or project owner can delete modules.')
         name = module.name
         module.delete()
         try:
@@ -237,7 +237,7 @@ class ModuleBulkImportView(APIView):
 
         project = _get_project(project_id)
         if not can_manage_module(request.user, project):
-            raise PermissionDenied('Only the project owner or admin can bulk import modules.')
+            raise PermissionDenied('Only super admin, admin, project manager, team lead, or project owner can bulk import modules.')
 
         file = request.FILES.get('file')
         if not file:

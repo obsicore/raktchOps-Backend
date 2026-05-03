@@ -51,6 +51,18 @@ class UserRole(models.Model):
 # Helper functions
 # ---------------------------------------------------------------------------
 
+ROLE_ALIASES = {
+    'project_lead': Role.TEAM_LEAD,
+}
+
+
+def normalize_role(role) -> str:
+    """Normalize legacy role values to canonical Role values."""
+    if role is None:
+        return Role.STAFF
+    return ROLE_ALIASES.get(str(role), str(role))
+
+
 def get_user_role(user) -> str:
     """
     Return the primary role string for a user.
@@ -60,14 +72,16 @@ def get_user_role(user) -> str:
     if getattr(user, 'is_superuser', False):
         return Role.SUPER_ADMIN
     try:
-        return UserRole.objects.get(user=user, is_primary=True).role
+        return normalize_role(UserRole.objects.get(user=user, is_primary=True).role)
     except UserRole.DoesNotExist:
         return Role.STAFF
 
 
 def has_role(user, *roles) -> bool:
     """Return True if the user's primary role is among the given roles."""
-    return get_user_role(user) in roles
+    user_role = normalize_role(get_user_role(user))
+    normalized_roles = {normalize_role(role) for role in roles}
+    return user_role in normalized_roles
 
 
 def is_super_admin(user) -> bool:

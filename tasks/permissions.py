@@ -11,7 +11,7 @@ def can_manage_task(user, task):
     Others: read-only.
     """
     role = get_user_role(user)
-    if role in (Role.SUPER_ADMIN, Role.ADMIN, Role.PROJECT_MANAGER):
+    if role in (Role.SUPER_ADMIN, Role.ADMIN, Role.PROJECT_MANAGER, Role.TEAM_LEAD):
         return True
     try:
         if task.module.project.owner.user == user:
@@ -27,7 +27,7 @@ def can_manage_task(user, task):
 def can_manage_task_in_project(user, project):
     """Can the user create/edit tasks in this project?"""
     role = get_user_role(user)
-    if role in (Role.SUPER_ADMIN, Role.ADMIN, Role.PROJECT_MANAGER):
+    if role in (Role.SUPER_ADMIN, Role.ADMIN, Role.PROJECT_MANAGER, Role.TEAM_LEAD):
         return True
     try:
         return project.owner.user == user

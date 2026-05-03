@@ -67,7 +67,7 @@ class TaskListCreateView(APIView):
     def post(self, request, module_id):
         module = _get_module(module_id)
         if not can_manage_task_in_project(request.user, module.project):
-            raise PermissionDenied('Only the project owner or admin can create tasks.')
+            raise PermissionDenied('Only super admin, admin, project manager, team lead, or project owner can create tasks.')
 
         data = dict(request.data)
         data['module'] = module_id
@@ -176,7 +176,7 @@ class TaskDetailView(APIView):
     def delete(self, request, module_id, pk):
         module, task = self._get_task(module_id, pk)
         if not can_manage_task_in_project(request.user, module.project):
-            raise PermissionDenied('Only the project owner or admin can delete tasks.')
+            raise PermissionDenied('Only super admin, admin, project manager, team lead, or project owner can delete tasks.')
         title = task.title
         project = module.project
         assignee_id = task.assignee_id
