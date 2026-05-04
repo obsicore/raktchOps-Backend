@@ -285,12 +285,18 @@ class EmployeeContributionsView(APIView):
                 'deadline': m.deadline.isoformat() if m.deadline else None,
             })
 
+        completed_projects = projects_qs.filter(status='completed').count()
+        tasks_base_qs = Task.objects.filter(assignee=user)
+        modules_base_qs = Module.objects.filter(assignee=user)
+
         stats = {
             'total_projects': len(all_pids),
+            'completed_projects': completed_projects,
             'led_projects': len(owned_pids),
-            'total_tasks_assigned': Task.objects.filter(assignee=user).count(),
-            'completed_tasks': Task.objects.filter(assignee=user, status='done').count(),
-            'assigned_modules': Module.objects.filter(assignee=user).count(),
+            'total_tasks_assigned': tasks_base_qs.count(),
+            'completed_tasks': tasks_base_qs.filter(status='done').count(),
+            'assigned_modules': modules_base_qs.count(),
+            'completed_modules': modules_base_qs.filter(status='done').count(),
         }
 
         return Response({
