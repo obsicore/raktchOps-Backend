@@ -241,12 +241,35 @@ class ProjectMemberListView(APIView):
             raise NotFound('Project not found.')
 
     def get(self, request, pk):
+        from modules.models import Module
+        from tasks.models import Task
+
         project = self._get_project(pk)
-        memberships = ProjectMember.objects.select_related(
-            'employee', 'employee__user'
-        ).filter(project=project).order_by('employee__full_name')
-        serializer = ProjectMemberSerializer(memberships, many=True)
-        return Response({'count': memberships.count(), 'results': serializer.data})
+        memberships = list(
+            ProjectMember.objects.select_related(
+                'employee', 'employee__user'
+            ).filter(project=project).order_by('employee__full_name')
+        )
+
+        results = []
+        for m in memberships:
+            data = ProjectMemberSerializer(m).data
+            user = m.employee.user
+            data['modules_assigned'] = Module.objects.filter(
+                project=project, assignee=user
+            ).count()
+            data['modules_done'] = Module.objects.filter(
+                project=project, assignee=user, status='done'
+            ).count()
+            data['tasks_assigned'] = Task.objects.filter(
+                module__project=project, assignee=user
+            ).count()
+            data['tasks_done'] = Task.objects.filter(
+                module__project=project, assignee=user, status='done'
+            ).count()
+            results.append(data)
+
+        return Response({'count': len(results), 'results': results})
 
     def post(self, request, pk):
         project = self._get_project(pk)

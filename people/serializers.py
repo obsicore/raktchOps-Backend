@@ -22,6 +22,8 @@ class EmployeeListSerializer(serializers.ModelSerializer):
     account_status = serializers.CharField(
         source='user.account_status', read_only=True
     )
+    total_projects = serializers.SerializerMethodField()
+    completed_projects = serializers.SerializerMethodField()
 
     class Meta:
         model = EmployeeProfile
@@ -43,11 +45,34 @@ class EmployeeListSerializer(serializers.ModelSerializer):
             'account_status',
             'avatar',
             'created_at',
+            'total_projects',
+            'completed_projects',
         ]
         read_only_fields = ['id', 'user', 'user_email', 'role', 'account_status', 'created_at']
 
     def get_role(self, obj):
         return obj.role
+
+    def get_total_projects(self, obj):
+        from projects.models import Project, ProjectMember
+        member_pids = set(
+            ProjectMember.objects.filter(employee=obj).values_list('project_id', flat=True)
+        )
+        owned_pids = set(
+            Project.objects.filter(owner=obj).values_list('id', flat=True)
+        )
+        return len(member_pids | owned_pids)
+
+    def get_completed_projects(self, obj):
+        from projects.models import Project, ProjectMember
+        member_pids = set(
+            ProjectMember.objects.filter(employee=obj).values_list('project_id', flat=True)
+        )
+        owned_pids = set(
+            Project.objects.filter(owner=obj).values_list('id', flat=True)
+        )
+        all_pids = member_pids | owned_pids
+        return Project.objects.filter(id__in=all_pids, status='completed').count()
 
 
 class EmployeeDetailSerializer(serializers.ModelSerializer):
