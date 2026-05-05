@@ -11,8 +11,9 @@ from datetime import timedelta
 # (one level above backend/)
 # ---------------------------------------------------------------------------
 from decouple import AutoConfig
-_ROOT_DIR = Path(__file__).resolve().parent.parent.parent  # repo root
-config = AutoConfig(search_path=str(_ROOT_DIR))
+# backend/ is the repo root when deployed to Vercel; also works locally
+_BACKEND_DIR = Path(__file__).resolve().parent.parent
+config = AutoConfig(search_path=str(_BACKEND_DIR))
 
 from decouple import Csv
 
@@ -20,9 +21,6 @@ from decouple import Csv
 # Paths
 # ---------------------------------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-# Root of the whole repo (one level above backend/)
-ROOT_DIR = BASE_DIR.parent
 
 # ---------------------------------------------------------------------------
 # Core security
@@ -152,7 +150,7 @@ STORAGES = {
 WHITENOISE_USE_FINDERS = True
 
 MEDIA_URL = config('MEDIA_URL', default='/media/')
-MEDIA_ROOT = ROOT_DIR / config('MEDIA_ROOT', default='backend/media')
+MEDIA_ROOT = BASE_DIR / config('MEDIA_ROOT', default='media')
 
 DEFAULT_AUTO_FIELD = 'django_mongodb_backend.fields.ObjectIdAutoField'
 
